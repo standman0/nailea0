@@ -38,14 +38,16 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-white to-amber-50/30 relative overflow-hidden">
-      {/* Subtle sparkles */}
-      <Sparkles className="absolute top-10 left-10 w-32 h-32 text-amber-400/10" />
-      <Sparkles className="absolute bottom-20 right-20 w-40 h-40 text-amber-500/10" />
+      {/* Floating Sparkles – Now behind everything & non-interactive */}
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        <Sparkles className="absolute top-10 left-10 w-32 h-32 text-amber-400/10" />
+        <Sparkles className="absolute bottom-20 right-20 w-40 h-40 text-amber-500/10" />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white border border-gray-200 shadow-2xl p-12"
+        className="relative w-full max-w-md bg-white border border-gray-200 shadow-2xl p-12"
       >
         {/* Compact Header */}
         <div className="text-center mb-10">
@@ -130,12 +132,12 @@ export default function Register() {
           </motion.button>
         </form>
 
-        {/* Login Link */}
+        {/* NOW FULLY CLICKABLE ON MOBILE */}
         <p className="text-center mt-8 text-gray-600 font-light">
           Already a member?{" "}
           <Link
             to="/login"
-            className="text-amber-600 hover:text-amber-700 font-medium tracking-wide underline underline-offset-4 transition"
+            className="text-amber-600 hover:text-amber-700 font-medium tracking-wide underline underline-offset-4 transition relative z-10"
           >
             Sign In
           </Link>
