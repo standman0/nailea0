@@ -101,7 +101,7 @@ export default function Login() {
           <p className="text-center mt-8 text-gray-600 font-light">
             New here?{' '}
             <Link
-              to="/signup"
+              to="/register"
               className="text-amber-600 hover:text-amber-700 font-medium tracking-wide underline underline-offset-4 transition"
             >
               Create Account
