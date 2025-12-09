@@ -71,7 +71,7 @@ function App() {
             </Route>
 
             {/* Redirect root to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/register" replace />} />
 
             {/* 404 Route */}
             <Route path="*" element={<Navigate to="/login" replace />} />
