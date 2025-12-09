@@ -48,7 +48,7 @@ export default function Sidebar() {
           {/* Logo & Toggle */}
           <div className="flex items-center justify-between p-8 border-b border-gray-100">
             <h1 className="text-2xl font-light tracking-wider text-gray-900">
-              LUXE NAILS
+              Nailea Studios
             </h1>
             <button
               onClick={() => setIsOpen(false)}
@@ -59,10 +59,9 @@ export default function Sidebar() {
           </div>
 
           {/* User Info */}
-          <div className="px-8 py-6 border-b border-gray-100">
+          <div className="px-8 py-2 border-b border-gray-100">
             <p className="text-sm uppercase tracking-widest text-gray-500">Welcome back</p>
             <p className="text-lg font-medium text-gray-900 mt-1">{user?.name || 'Admin'}</p>
-            <p className="text-sm text-gold-600 font-medium">Administrator</p>
           </div>
 
           {/* Navigation */}
@@ -83,7 +82,7 @@ export default function Sidebar() {
                   onClick={() => setIsOpen(false)}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'}`} />
-                  <span className="font-medium tracking-wide">{item.label}</span>
+                  <span className="font-medium ">{item.label}</span>
                   {isActive && <div className="ml-auto w-1 h-8 bg-gold-600" />}
                 </NavLink>
               );
