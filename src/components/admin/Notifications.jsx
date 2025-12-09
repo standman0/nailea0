@@ -1,19 +1,36 @@
 // src/components/admin/Notifications.jsx
 import React, { useEffect, useState } from 'react';
 import api from '../../api/apiClient';
-import { Mail, MessageSquare, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { 
+  Mail, 
+  MessageSquare, 
+  Send, 
+  CheckCircle, 
+  AlertCircle,
+  Sparkles,
+  BellRing
+} from 'lucide-react';
 
 export default function Notifications() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  const [emailForm, setEmailForm] = useState({ to: '', subject: 'Test Email', message: 'This is a test from your luxury salon.' });
-  const [smsForm, setSmsForm] = useState({ to: '', message: 'This is a test SMS from your salon.' });
+
+  const [emailForm, setEmailForm] = useState({ 
+    to: '', 
+    subject: 'Test from Nailea Studios', 
+    message: 'This is a test email from your luxury salon system. Everything is working perfectly.' 
+  });
+  
+  const [smsForm, setSmsForm] = useState({ 
+    to: '', 
+    message: 'Test SMS from Nailea Studios — your luxury booking system is ready.' 
+  });
 
   useEffect(() => {
     api.get('/notifications/status')
       .then(res => setStatus(res.data))
-      .catch(() => setStatus(null));
+      .catch(() => setStatus({ email: 'disconnected', sms: 'disconnected' }));
   }, []);
 
   const sendTestEmail = async (e) => {
@@ -44,12 +61,12 @@ export default function Notifications() {
     }
   };
 
-  const sendTomorrow = async () => {
+  const sendTomorrowReminders = async () => {
     setLoading(true);
     setMessage(null);
     try {
       const res = await api.post('/notifications/reminders/tomorrow');
-      setMessage({ type: 'success', text: res.data.message || 'Tomorrow’s reminders queued' });
+      setMessage({ type: 'success', text: res.data.message || 'Tomorrow’s reminders queued successfully' });
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to queue reminders' });
     } finally {
@@ -57,145 +74,182 @@ export default function Notifications() {
     }
   };
 
+  const getStatusColor = (service) => {
+    if (!status) return 'bg-gray-100 text-gray-500';
+    return status[service] === 'connected' 
+      ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+      : 'bg-red-100 text-red-800 border-red-200';
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-12 text-center sm:text-left">
-        <h1 className="text-5xl font-light tracking-wider text-gray-900">
+      <div className="mb-16 text-center">
+        <h1 className="text-6xl font-light tracking-widest text-gray-900">
           Notifications
         </h1>
-        <div className="w-32 h-px bg-gradient-to-r from-transparent via-gold-600 to-transparent mt-6 mx-auto sm:mx-0" />
-        <p className="text-lg text-gray-600 mt-4 font-light">
-          Manage email & SMS communications
+        <div className="w-40 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent mx-auto mt-8" />
+        <p className="text-xl text-gray-600 mt-6 font-light tracking-wide">
+          Stay connected with your valued guests
         </p>
       </div>
 
-      {/* Status Card */}
-      <div className="mb-12">
-        <div className="bg-white border border-gray-200 shadow-lg p-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="p-4 bg-gradient-to-br from-gold-50 to-stone-50 rounded-full">
-              <Mail className="w-8 h-8 text-gold-600" />
-            </div>
-            <div>
-              <h3 className="text-xl font-medium text-gray-900">Service Status</h3>
-              <p className="text-gray-600">Email & SMS provider connection</p>
-            </div>
+      {/* Service Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
+        <div className="bg-white border border-gray-200 shadow-2xl p-10 text-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl">
+            <Mail className="w-14 h-14 text-white" />
           </div>
-          <pre className="bg-gray-50 p-6 rounded-lg text-sm font-mono text-gray-700 overflow-x-auto">
-            {status ? JSON.stringify(status, null, 2) : 'Loading status...'}
-          </pre>
+          <h3 className="text-2xl font-light text-gray-900 mb-4">Email Service</h3>
+          <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-full text-lg font-medium border ${getStatusColor('email')}`}>
+            <div className={`w-4 h-4 rounded-full ${status?.email === 'connected' ? 'bg-emerald-600' : 'bg-red-600'} animate-pulse`} />
+            {status?.email === 'connected' ? 'Connected' : 'Disconnected'}
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 shadow-2xl p-10 text-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl">
+            <MessageSquare className="w-14 h-14 text-white" />
+          </div>
+          <h3 className="text-2xl font-light text-gray-900 mb-4">SMS Service</h3>
+          <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-full text-lg font-medium border ${getStatusColor('sms')}`}>
+            <div className={`w-4 h-4 rounded-full ${status?.sms === 'connected' ? 'bg-emerald-600' : 'bg-red-600'} animate-pulse`} />
+            {status?.sms === 'connected' ? 'Connected' : 'Disconnected'}
+          </div>
         </div>
       </div>
 
-      {/* Grid of Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Test Communications */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
         {/* Test Email */}
-        <div className="bg-white border border-gray-200 shadow-lg p-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Mail className="w-10 h-10 text-gold-600" />
-            <h3 className="text-2xl font-light text-gray-900">Send Test Email</h3>
-          </div>
+        <div className="bg-white border border-gray-200 shadow-2xl overflow-hidden group hover:border-amber-200 transition">
+          <div className="h-1.5 bg-gradient-to-r from-amber-600 via-amber-500 to-transparent" />
+          <div className="p-12">
+            <div className="flex items-center gap-5 mb-10">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl group-hover:scale-110 transition">
+                <Mail className="w-9 h-9 text-white" />
+              </div>
+              <h2 className="text-3xl font-light text-gray-900">Send Test Email</h2>
+            </div>
 
-          <form onSubmit={sendTestEmail} className="space-y-6">
-            <input
-              type="email"
-              placeholder="Recipient email"
-              value={emailForm.to}
-              onChange={e => setEmailForm({ ...emailForm, to: e.target.value })}
-              className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Subject"
-              value={emailForm.subject}
-              onChange={e => setEmailForm({ ...emailForm, subject: e.target.value })}
-              className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition"
-            />
-            <textarea
-              placeholder="Message"
-              value={emailForm.message}
-              onChange={e => setEmailForm({ ...emailForm, message: e.target.value })}
-              rows={5}
-              className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition resize-none"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-5 bg-black text-white font-medium tracking-wider uppercase hover:bg-gray-900 transition disabled:opacity-60 flex items-center justify-center gap-3"
-            >
-              <Send className="w-5 h-5" />
-              {loading ? 'Sending...' : 'Send Test Email'}
-            </button>
-          </form>
+            <form onSubmit={sendTestEmail} className="space-y-8">
+              <input
+                type="email"
+                placeholder="Recipient email"
+                value={emailForm.to}
+                onChange={e => setEmailForm({ ...emailForm, to: e.target.value })}
+                className="w-full px-6 py-5 border border-gray-300 focus:border-amber-600 transition text-lg font-light"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Subject"
+                value={emailForm.subject}
+                onChange={e => setEmailForm({ ...emailForm, subject: e.target.value })}
+                className="w-full px-6 py-5 border border-gray-300 focus:border-amber-600 transition text-lg font-light"
+              />
+              <textarea
+                placeholder="Message"
+                value={emailForm.message}
+                onChange={e => setEmailForm({ ...emailForm, message: e.target.value })}
+                rows={5}
+                className="w-full px-6 py-5 border border-gray-300 focus:border-amber-600 transition resize-none text-lg font-light"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-6 bg-black text-white font-medium tracking-widest uppercase hover:bg-gray-900 transition disabled:opacity-60 flex items-center justify-center gap-4 text-xl shadow-xl group"
+              >
+                <Send className="w-7 h-7 group-hover:translate-x-1 transition" />
+                {loading ? 'Sending...' : 'Send Test Email'}
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Test SMS */}
-        <div className="bg-white border border-gray-200 shadow-lg p-8">
-          <div className="flex items-center gap-4 mb-8">
-            <MessageSquare className="w-10 h-10 text-gold-600" />
-            <h3 className="text-2xl font-light text-gray-900">Send Test SMS</h3>
+        <div className="bg-white border border-gray-200 shadow-2xl overflow-hidden group hover:border-amber-200 transition">
+          <div className="h-1.5 bg-gradient-to-r from-amber-600 via-amber-500 to-transparent" />
+          <div className="p-12">
+            <div className="flex items-center gap-5 mb-10">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl group-hover:scale-110 transition">
+                <MessageSquare className="w-9 h-9 text-white" />
+              </div>
+              <h2 className="text-3xl font-light text-gray-900">Send Test SMS</h2>
+            </div>
+
+            <form onSubmit={sendTestSMS} className="space-y-8">
+              <input
+                type="tel"
+                placeholder="+1234567890"
+                value={smsForm.to}
+                onChange={e => setSmsForm({ ...smsForm, to: e.target.value })}
+                className="w-full px-6 py-5 border border-gray-300 focus:border-amber-600 transition text-lg font-light"
+                required
+              />
+              <textarea
+                placeholder="Your message (160 characters max)"
+                value={smsForm.message}
+                onChange={e => setSmsForm({ ...smsForm, message: e.target.value })}
+                rows={5}
+                maxLength={160}
+                className="w-full px-6 py-5 border border-gray-300 focus:border-amber-600 transition resize-none text-lg font-light"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-6 bg-black text-white font-medium tracking-widest uppercase hover:bg-gray-900 transition disabled:opacity-60 flex items-center justify-center gap-4 text-xl shadow-xl group"
+              >
+                <Send className="w-7 h-7 group-hover:translate-x-1 transition" />
+                {loading ? 'Sending...' : 'Send Test SMS'}
+              </button>
+            </form>
           </div>
+        </div>
+      </div>
 
-          <form onSubmit={sendTestSMS} className="space-y-6">
-            <input
-              type="tel"
-              placeholder="Phone number (e.g. +1234567890)"
-              value={smsForm.to}
-              onChange={e => setSmsForm({ ...smsForm, to: e.target.value })}
-              className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition"
-              required
-            />
-            <textarea
-              placeholder="Message"
-              value={smsForm.message}
-              onChange={e => setSmsForm({ ...smsForm, message: e.target.value })}
-              rows={6}
-              className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition resize-none"
-            />
+      {/* Mass Reminder Action */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <div className="relative bg-black text-white shadow-2xl overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-600/20 via-transparent to-amber-800/20" />
+          <div className="relative p-16 text-center">
+            <BellRing className="w-24 h-24 mx-auto mb-8 opacity-20" />
+            <h2 className="text-5xl font-light tracking-wide mb-6">Send Tomorrow’s Reminders</h2>
+            <p className="text-xl opacity-90 mb-10 max-w-3xl mx-auto">
+              Automatically deliver personalized email & SMS reminders to every client with an appointment tomorrow.
+            </p>
             <button
-              type="submit"
+              onClick={sendTomorrowReminders}
               disabled={loading}
-              className="w-full py-5 bg-black text-white font-medium tracking-wider uppercase hover:bg-gray-900 transition disabled:opacity-60 flex items-center justify-center gap-3"
+              className="px-20 py-7 bg-white text-black font-medium tracking-widest uppercase hover:bg-amber-50 transition-all disabled:opacity-60 inline-flex items-center gap-5 text-2xl shadow-2xl group-hover:scale-105 transition"
             >
-              <Send className="w-5 h-5" />
-              {loading ? 'Sending...' : 'Send Test SMS'}
+              <Send className="w-8 h-8" />
+              {loading ? 'Queuing Reminders...' : 'Send All Tomorrow Reminders'}
             </button>
-          </form>
+            <Sparkles className="absolute top-10 right-10 w-20 h-20 opacity-10 group-hover:opacity-20 transition" />
+          </div>
         </div>
       </div>
 
-      {/* Send Tomorrow Reminders */}
-      <div className="mt-12 max-w-4xl mx-auto">
-        <div className="bg-gradient-to-r from-black to-gray-900 text-white p-12 shadow-2xl text-center">
-          <h3 className="text-3xl font-light mb-6">Send Tomorrow’s Reminders</h3>
-          <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
-            Automatically send personalized email & SMS reminders to all clients with appointments tomorrow.
-          </p>
-          <button
-            onClick={sendTomorrow}
-            disabled={loading}
-            className="px-16 py-6 bg-white text-black font-medium tracking-wider uppercase hover:bg-gray-100 transition disabled:opacity-60 inline-flex items-center gap-4 text-xl"
-          >
-            <Send className="w-6 h-6" />
-            {loading ? 'Queuing Reminders...' : 'Send All Tomorrow Reminders'}
-          </button>
-        </div>
-      </div>
-
-      {/* Message Feedback */}
+      {/* Feedback Message */}
       {message && (
-        <div className={`mt-12 p-8 text-center ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'} border ${message.type === 'success' ? 'border-emerald-200' : 'border-red-200'} shadow-lg max-w-2xl mx-auto`}>
-          <div className="flex items-center justify-center gap-4">
-            {message.type === 'success' ? <CheckCircle className="w-10 h-10" /> : <AlertCircle className="w-10 h-10" />}
-            <p className="text-xl font-medium">{message.text}</p>
+        <div className={`max-w-2xl mx-auto p-10 text-center shadow-2xl border ${
+          message.type === 'success' 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center justify-center gap-6">
+            {message.type === 'success' ? (
+              <CheckCircle className="w-16 h-16" />
+            ) : (
+              <AlertCircle className="w-16 h-16" />
+            )}
+            <p className="text-2xl font-medium">{message.text}</p>
           </div>
         </div>
       )}
 
-      {/* Bottom accent */}
-      <div className="mt-20 h-px bg-gradient-to-r from-transparent via-gold-600 to-transparent opacity-30" />
+      <div className="mt-20 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent opacity-40" />
     </div>
   );
 }

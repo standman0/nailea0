@@ -1,44 +1,146 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+// src/pages/Register.jsx
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, User, Mail, Lock, Sparkles } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setError("");
+    setLoading(true);
+
     try {
-      const user = await register(name, email, password);
-      if (user?.role === 'admin') navigate('/admin/dashboard');
-      else navigate('/book');
+      const user = await register(`${first.trim()} ${last.trim()}`, email.trim(), password);
+      if (user?.isAdmin || user?.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/book", { replace: true });
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-2">Create account</h1>
-        <p className="text-sm text-gray-500 mb-6">Nice to meet you — let's get started.</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 via-white to-amber-50/30 relative overflow-hidden">
+      {/* Subtle sparkles */}
+      <Sparkles className="absolute top-10 left-10 w-32 h-32 text-amber-400/10" />
+      <Sparkles className="absolute bottom-20 right-20 w-40 h-40 text-amber-500/10" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="text-sm text-red-600">{error}</div>}
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" className="w-full px-3 py-2 rounded-md border border-gray-200 bg-gray-50" />
-          <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@example.com" className="w-full px-3 py-2 rounded-md border border-gray-200 bg-gray-50" />
-          <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Choose a password" className="w-full px-3 py-2 rounded-md border border-gray-200 bg-gray-50" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md bg-white border border-gray-200 shadow-2xl p-12"
+      >
+        {/* Compact Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-light tracking-widest text-gray-900">NAILEA</h1>
+          <div className="w-32 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent mx-auto mt-4" />
+        </div>
 
-          <button type="submit" className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700">Create account</button>
+        {/* Error */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 text-center text-sm font-light">
+            {error}
+          </div>
+        )}
+
+        {/* Compact Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="First"
+                value={first}
+                onChange={(e) => setFirst(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 border border-gray-300 text-lg font-light focus:border-amber-600 transition"
+                required
+              />
+            </div>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Last"
+                value={last}
+                onChange={(e) => setLast(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 border border-gray-300 text-lg font-light focus:border-amber-600 transition"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 border border-gray-300 text-lg font-light focus:border-amber-600 transition"
+              required
+            />
+          </div>
+
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type={showPass ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-12 pr-12 py-4 border border-gray-300 text-lg font-light focus:border-amber-600 transition"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass(!showPass)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            disabled={loading}
+            className="w-full py-5 bg-black text-white font-medium tracking-widest uppercase hover:bg-gray-900 transition-all disabled:opacity-60 flex items-center justify-center gap-3 shadow-xl group"
+          >
+            <Sparkles className="w-6 h-6 group-hover:scale-110 transition" />
+            {loading ? "Creating..." : "Create Account"}
+          </motion.button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">Already have an account? <a href="/login" className="text-blue-600">Sign in</a></div>
-      </div>
+        {/* Login Link */}
+        <p className="text-center mt-8 text-gray-600 font-light">
+          Already a member?{" "}
+          <Link
+            to="/login"
+            className="text-amber-600 hover:text-amber-700 font-medium tracking-wide underline underline-offset-4 transition"
+          >
+            Sign In
+          </Link>
+        </p>
+      </motion.div>
     </div>
   );
 }

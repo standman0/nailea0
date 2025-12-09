@@ -1,142 +1,189 @@
 // src/components/admin/Analytics.jsx
 import React, { useEffect, useState } from 'react';
 import api from '../../api/apiClient';
-import { TrendingUp, Users, Calendar, DollarSign, Activity } from 'lucide-react';
+import { 
+  DollarSign, 
+  Calendar, 
+  Users, 
+  TrendingUp, 
+  Activity, 
+  Sparkles,
+  ArrowUpRight,
+  Clock,
+  Star
+} from 'lucide-react';
 
 export default function AdminAnalytics() {
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalAppointments: 0,
-    totalClients: 0,
-    avgRevenuePerVisit: 0,
-    growth: 0,
-    thisMonthRevenue: 0,
+  const [data, setData] = useState({
+    overview: {},
+    popularServices: [],
+    topClients: [],
+    trends: [],
+    peakHours: [],
+    cancellations: {},
+    monthlyComparison: {}
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/analytics/overview')
-      .then(res => {
-        const data = res.data || {};
-        setStats({
-          totalRevenue: data.totalRevenue || 124800,
-          totalAppointments: data.totalAppointments || 428,
-          totalClients: data.totalClients || 312,
-          avgRevenuePerVisit: data.avgRevenuePerVisit || 292,
-          growth: data.revenueGrowth || 18.4,
-          thisMonthRevenue: data.thisMonthRevenue || 28400,
+    const fetchAllAnalytics = async () => {
+      try {
+        const [
+          overview,
+          popularServices,
+          topClients,
+          trends,
+          peakHours,
+          cancellations,
+          monthly
+        ] = await Promise.all([
+          api.get('/analytics/overview'),
+          api.get('/analytics/services/popular'),
+          api.get('/analytics/clients/top'),
+          api.get('/analytics/trends'),
+          api.get('/analytics/peak-hours'),
+          api.get('/analytics/cancellations'),
+          api.get('/analytics/monthly')
+        ]);
+
+        setData({
+          overview: overview.data || {},
+          popularServices: popularServices.data || [],
+          topClients: topClients.data || [],
+          trends: trends.data || [],
+          peakHours: peakHours.data || [],
+          cancellations: cancellations.data || {},
+          monthlyComparison: monthly.data || {}
         });
-      })
-      .catch(() => {
-        setStats({
-          totalRevenue: 124800,
-          totalAppointments: 428,
-          totalClients: 312,
-          avgRevenuePerVisit: 292,
-          growth: 18.4,
-          thisMonthRevenue: 28400,
-        });
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error("Analytics fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllAnalytics();
   }, []);
 
-  const formatCurrency = (amount) => `$${Number(amount).toLocaleString()}`;
-
-  const metrics = [
-    { label: 'Total Revenue', value: formatCurrency(stats.totalRevenue), icon: DollarSign, trend: '+12.5%' },
-    { label: 'Appointments', value: stats.totalAppointments, icon: Calendar, trend: '+8.2%' },
-    { label: 'Active Clients', value: stats.totalClients, icon: Users, trend: '+14.1%' },
-    { label: 'Avg. Revenue/Visit', value: formatCurrency(stats.avgRevenuePerVisit), icon: TrendingUp, trend: '+6.8%' },
-  ];
+  const formatCurrency = (amount) => amount ? `$${Number(amount).toLocaleString()}` : '$0';
+  const o = data.overview;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-16 h-16 border-4 border-gold-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-10 text-center sm:text-left">
-        <h1 className="text-4xl sm:text-5xl font-light tracking-wider text-gray-900">
+      <div className="mb-16 text-center">
+        <h1 className="text-6xl font-light tracking-widest text-gray-900">
           Analytics
         </h1>
-        <div className="w-24 sm:w-32 h-px bg-gradient-to-r from-transparent via-gold-600 to-transparent mt-4 mx-auto sm:mx-0" />
-        <p className="text-base sm:text-lg text-gray-600 mt-4 font-light">
-          Performance insights from your luxury collection
+        <div className="w-40 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent mx-auto mt-8" />
+        <p className="text-xl text-gray-600 mt-6 font-light tracking-wide">
+          Live insights from your studio’s performance
         </p>
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {metrics.map((metric) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
+        {[
+          { label: 'Total Revenue', value: formatCurrency(o.totalRevenue), icon: DollarSign, color: 'from-amber-500 to-amber-600' },
+          { label: 'Appointments', value: o.totalAppointments || 0, icon: Calendar, color: 'from-amber-600 to-amber-700' },
+          { label: 'Active Clients', value: o.totalClients || 0, icon: Users, color: 'from-emerald-500 to-emerald-600' },
+          { label: 'Avg. Revenue/Visit', value: formatCurrency(o.avgRevenuePerVisit), icon: TrendingUp, color: 'from-purple-500 to-purple-600' },
+        ].map((metric, i) => {
           const Icon = metric.icon;
           return (
             <div
-              key={metric.label}
-              className="group bg-white border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-500 p-6 sm:p-8 text-center"
+              key={i}
+              className="group relative bg-white border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden hover:border-amber-200"
             >
-              <div className="flex justify-center mb-4">
-                <div className="p-4 sm:p-5 bg-gradient-to-br from-gold-50 to-stone-50 rounded-full group-hover:scale-110 transition">
-                  <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-gold-600" />
+              <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${metric.color}`} />
+              <div className="p-10 text-center">
+                <div className={`w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br ${metric.color} p-5 shadow-lg group-hover:scale-110 transition-transform`}>
+                  <Icon className="w-full h-full text-white" />
                 </div>
+                <p className="text-sm uppercase tracking-widest text-gray-500 font-medium mb-4">{metric.label}</p>
+                <p className="text-4xl font-light text-gray-900">{metric.value}</p>
               </div>
-
-              <p className="text-xs sm:text-sm uppercase tracking-widest text-gray-500 font-medium mb-2">
-                {metric.label}
-              </p>
-
-              <p className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 tracking-tight mb-1">
-                {metric.value}
-              </p>
-
-              <div className="flex items-center justify-center gap-1 mt-2">
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-                <span className="text-xs sm:text-sm font-medium text-emerald-600">
-                  {metric.trend}
-                </span>
-              </div>
+              <div className="h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent opacity-30" />
             </div>
           );
         })}
       </div>
 
-      {/* Highlight Cards - Stack on mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+      {/* Live Highlights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-16">
         {/* This Month Revenue */}
-        <div className="bg-gradient-to-br from-black to-gray-900 text-white p-8 sm:p-12 shadow-2xl rounded-none">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div>
-              <p className="text-sm uppercase tracking-widest opacity-80 mb-2">This Month</p>
-              <p className="text-4xl sm:text-5xl font-light tracking-tight">
-                {formatCurrency(stats.thisMonthRevenue)}
-              </p>
-              <p className="text-base sm:text-lg opacity-90 mt-3">Revenue Performance</p>
+        <div className="lg:col-span-2 relative bg-black text-white shadow-2xl overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-600/20 via-transparent to-amber-800/20" />
+          <div className="relative p-12">
+            <p className="text-sm uppercase tracking-widest opacity-80 mb-3">This Month Revenue</p>
+            <p className="text-7xl font-light tracking-tight">
+              {formatCurrency(o.thisMonthRevenue)}
+            </p>
+            <div className="flex items-center gap-4 mt-6">
+              <Activity className="w-9 h-9 opacity-60" />
+              <span className="text-2xl text-amber-400 font-medium">
+                {o.growth > 0 ? '+' : ''}{o.growth || 0}% vs last month
+              </span>
             </div>
-            <Activity className="w-16 h-16 sm:w-20 sm:h-20 opacity-30 mx-auto sm:mx-0" />
           </div>
+          <Sparkles className="absolute bottom-8 right-10 w-20 h-20 opacity-10 group-hover:opacity-20 transition" />
         </div>
 
-        {/* Growth Card */}
-        <div className="bg-white border border-gray-200 shadow-2xl p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="text-center sm:text-left">
-            <p className="text-sm uppercase tracking-widest text-gray-500 mb-3">
-              Revenue Growth
-            </p>
-            <p className="text-5xl sm:text-6xl font-light text-emerald-600">
-              +{stats.growth}%
-            </p>
-            <p className="text-gray-600 mt-3 font-light">vs last month</p>
-          </div>
-          <div className="text-7xl sm:text-9xl opacity-5">Trending Up</div>
+        {/* Top Performing Service */}
+        <div className="bg-white border border-gray-200 shadow-2xl p-10 text-center">
+          <Star className="w-16 h-16 mx-auto mb-6 text-amber-500" />
+          <p className="text-sm uppercase tracking-widest text-gray-500 mb-4">Most Popular Service</p>
+          <p className="text-3xl font-light text-gray-900">
+            {data.popularServices[0]?.name || '—'}
+          </p>
+          <p className="text-5xl font-light text-amber-600 mt-4">
+            {data.popularServices[0]?.count || 0}
+          </p>
+          <p className="text-gray-600">bookings this month</p>
         </div>
       </div>
 
-      {/* Bottom accent */}
-      <div className="mt-16 h-px bg-gradient-to-r from-transparent via-gold-600 to-transparent opacity-30" />
+      {/* Top Clients */}
+      {data.topClients.length > 0 && (
+        <div className="mb-16">
+          <h2 className="text-3xl font-light text-center mb-10 text-gray-900">VIP Clients</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {data.topClients.slice(0, 3).map((client, i) => (
+              <div key={i} className="bg-white border border-gray-200 shadow-lg p-8 text-center hover:shadow-xl transition">
+                <div className={`w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
+                  {client.fullName?.[0] || 'C'}
+                </div>
+                <p className="text-xl font-light text-gray-900">{client.fullName || client.name}</p>
+                <p className="text-3xl font-light text-amber-600 mt-3">
+                  {formatCurrency(client.totalSpent)}
+                </p>
+                <p className="text-sm text-gray-600">{client.appointments} visits</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Peak Hours Preview */}
+      {data.peakHours.length > 0 && (
+        <div className="text-center">
+          <p className="text-sm uppercase tracking-widest text-gray-500 mb-4">Peak Booking Hour</p>
+          <p className="text-6xl font-light text-amber-600">
+            {data.peakHours[0]?.hour}:00
+          </p>
+          <p className="text-gray-600 mt-3">{data.peakHours[0]?.count} appointments</p>
+        </div>
+      )}
+
+      <div className="mt-20 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent opacity-40" />
     </div>
   );
 }

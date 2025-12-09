@@ -41,71 +41,81 @@ export default function Sidebar() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 shadow-xl z-50 transform transition-transform duration-300 ${
-        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
-          {/* Logo & Toggle */}
-          <div className="flex items-center justify-between p-8 border-b border-gray-100">
-            <h1 className="text-2xl font-light tracking-wider text-gray-900">
-              Nailea Studios
+
+          {/* Logo + Close Button */}
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <h1 className="text-2xl font-light tracking-widest text-gray-900">
+              NAILEA
             </h1>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="lg:hidden"
-            >
-              <X className="w-6 h-6" />
+            <button onClick={() => setIsOpen(false)} className="lg:hidden">
+              <X className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
-          {/* User Info */}
-          <div className="px-8 py-2 border-b border-gray-100">
-            <p className="text-sm uppercase tracking-widest text-gray-500">Welcome back</p>
-            <p className="text-lg font-medium text-gray-900 mt-1">{user?.name || 'Admin'}</p>
+          {/* Compact User Info */}
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-lg shadow-md">
+              {user?.name?.[0]?.toUpperCase() || 'A'}
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">Welcome back</p>
+              <p className="text-sm font-semibold text-gray-900">{user?.name || 'Admin'}</p>
+            </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-6 py-8 space-y-2">
+          {/* Navigation Menu */}
+          <nav className="flex-1 px-3 py-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.to;
+              const isActive = location.pathname.startsWith(item.to);
 
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-4 px-6 py-4 rounded-none transition-all duration-300 group ${
+                  end
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group relative overflow-hidden ${
                     isActive
                       ? 'bg-black text-white'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'}`} />
-                  <span className="font-medium ">{item.label}</span>
-                  {isActive && <div className="ml-auto w-1 h-8 bg-gold-600" />}
+                  <Icon className={`w-5 h-5 transition-colors ${
+                    isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'
+                  }`} />
+                  <span>{item.label}</span>
+
+                  {/* Gold left bar indicator */}
+                  {isActive && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-500 to-yellow-600" />
+                  )}
                 </NavLink>
               );
             })}
           </nav>
 
           {/* Logout */}
-          <div className="p-6 border-t border-gray-100">
+          <div className="border-t border-gray-100 p-4">
             <button
               onClick={logout}
-              className="flex items-center gap-4 w-full px-6 py-4 text-gray-700 hover:bg-gray-50 transition-all group"
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition group"
             >
-              <LogOut className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
-              <span className="font-medium tracking-wide">Logout</span>
+              <LogOut className="w-5 h-5 text-gray-500 group-hover:text-gray-900 transition-colors" />
+              <span>Logout</span>
             </button>
           </div>
         </div>
       </aside>
 
-      {/* Mobile Menu Button */}
+      {/* Mobile Floating Menu Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 lg:hidden bg-black text-white p-4 rounded-full shadow-2xl z-40 hover:bg-gray-900 transition"
+        className="fixed bottom-6 right-6 lg:hidden bg-black text-white p-4 rounded-full shadow-2xl z-40 hover:bg-gray-900 transition-all"
       >
         <Menu className="w-6 h-6" />
       </button>

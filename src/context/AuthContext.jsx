@@ -11,15 +11,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Load current user on refresh
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
       api.get('/auth/me')
         .then(res => {
-          const userData = res.data;
+          const data = res.data;
           const normalized = {
-            ...userData,
-            isAdmin: userData.role === 'admin' || userData.role === 'Admin'
+            ...data,
+            isAdmin: data.role === 'admin' || data.role === 'Admin'
           };
           setUser(normalized);
         })
@@ -34,6 +36,43 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+
+  // -------------------------
+  // REGISTER FUNCTION (NEW)
+  // -------------------------
+  const register = async (name, email, password) => {
+    try {
+      const res = await api.post('/auth/register', {
+        name,
+        email,
+        password
+      });
+
+      // Backend should return: { token, user }
+      const { token: newToken, user: userFromServer } = res.data;
+
+      // Save token
+      localStorage.setItem('token', newToken);
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      setToken(newToken);
+
+      // Normalize user object
+      const normalizedUser = {
+        ...userFromServer,
+        isAdmin: userFromServer.role === 'admin' || userFromServer.role === 'Admin'
+      };
+
+      setUser(normalizedUser);
+
+      return normalizedUser; // important!
+    } catch (err) {
+      console.error("Registration failed:", err.response?.data);
+      throw err;
+    }
+  };
+
+
+  // LOGIN
   const login = async (email, password) => {
     try {
       const res = await api.post('/auth/login', { email, password });
@@ -49,15 +88,13 @@ export const AuthProvider = ({ children }) => {
       };
       setUser(normalizedUser);
 
-      console.log("LOGIN SUCCESS → User:", normalizedUser);
-
-      // Return normalized user so caller can redirect
       return normalizedUser;
     } catch (err) {
       console.error("Login failed:", err.response?.data);
       throw err;
     }
   };
+
 
   const logout = () => {
     setUser(null);
@@ -68,13 +105,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      login,
-      logout,
-      isAdmin: () => !!user?.isAdmin
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,   // <-- IMPORTANT
+        logout,
+        isAdmin: () => !!user?.isAdmin
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

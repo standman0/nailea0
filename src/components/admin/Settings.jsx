@@ -9,13 +9,16 @@ import {
   Globe, 
   Save, 
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
-    salonName: 'Luxe Nails',
+    salonName: 'Nailea Studios',
     timezone: 'America/New_York',
+    currency: 'USD',
+    language: 'en',
     workingHours: {
       monday: { open: '09:00', close: '19:00', closed: false },
       tuesday: { open: '09:00', close: '19:00', closed: false },
@@ -30,8 +33,6 @@ export default function AdminSettings() {
     bookingConfirmationEmail: true,
     bookingConfirmationSMS: false,
     requirePhone: false,
-    currency: 'USD',
-    language: 'en',
   });
 
   const [loading, setLoading] = useState(true);
@@ -41,10 +42,12 @@ export default function AdminSettings() {
   useEffect(() => {
     api.get('/settings')
       .then(res => {
-        if (res.data) setSettings(prev => ({ ...prev, ...res.data }));
+        if (res.data) {
+          setSettings(prev => ({ ...prev, ...res.data }));
+        }
       })
       .catch(() => {
-        // Keep defaults
+        // Keep beautiful defaults
       })
       .finally(() => setLoading(false));
   }, []);
@@ -54,7 +57,8 @@ export default function AdminSettings() {
     setMessage(null);
     try {
       await api.put('/settings', settings);
-      setMessage({ type: 'success', text: 'Settings saved successfully' });
+      setMessage({ type: 'success', text: 'Settings saved perfectly' });
+      setTimeout(() => setMessage(null), 4000);
     } catch (err) {
       setMessage({ type: 'error', text: 'Failed to save settings' });
     } finally {
@@ -72,142 +76,172 @@ export default function AdminSettings() {
     }));
   };
 
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-16 h-16 border-4 border-gold-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-12 text-center sm:text-left">
-        <h1 className="text-5xl font-light tracking-wider text-gray-900">
+      <div className="mb-16 text-center">
+        <h1 className="text-6xl font-light tracking-widest text-gray-900">
           Settings
         </h1>
-        <div className="w-32 h-px bg-gradient-to-r from-transparent via-gold-600 to-transparent mt-6 mx-auto sm:mx-0" />
-        <p className="text-lg text-gray-600 mt-4 font-light">
-          Configure your luxury experience
+        <div className="w-40 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent mx-auto mt-8" />
+        <p className="text-xl text-gray-600 mt-6 font-light tracking-wide">
+          Craft your studio’s perfect experience
         </p>
       </div>
 
-      {/* Settings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - General */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Salon Info */}
-          <div className="bg-white border border-gray-200 shadow-lg p-10">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-gradient-to-br from-gold-50 to-stone-50 rounded-full">
-                <Globe className="w-8 h-8 text-gold-600" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Main Settings */}
+        <div className="lg:col-span-2 space-y-10">
+
+          {/* Salon Identity */}
+          <div className="bg-white border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-amber-600 via-amber-500 to-transparent" />
+            <div className="p-12">
+              <div className="flex items-center gap-5 mb-10">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl">
+                  <Sparkles className="w-9 h-9 text-white" />
+                </div>
+                <h2 className="text-3xl font-light text-gray-900">Studio Identity</h2>
               </div>
-              <h3 className="text-2xl font-light text-gray-900">Salon Information</h3>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm uppercase tracking-wider text-gray-700 mb-3">Salon Name</label>
-                <input
-                  type="text"
-                  value={settings.salonName}
-                  onChange={e => setSettings(prev => ({ ...prev, salonName: e.target.value }))}
-                  className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm uppercase tracking-wider text-gray-700 mb-3">Timezone</label>
-                <select
-                  value={settings.timezone}
-                  onChange={e => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
-                  className="w-full px-6 py-4 border border-gray-300 text-lg focus:border-gold-600 transition"
-                >
-                  <option value="America/New_York">Eastern Time</option>
-                  <option value="America/Chicago">Central Time</option>
-                  <option value="America/Los_Angeles">Pacific Time</option>
-                  <option value="Europe/London">London</option>
-                  <option value="Europe/Paris">Paris</option>
-                </select>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <label className="block text-sm uppercase tracking-widest text-gray-600 mb-3">Salon Name</label>
+                  <input
+                    type="text"
+                    value={settings.salonName}
+                    onChange={e => setSettings(prev => ({ ...prev, salonName: e.target.value }))}
+                    className="w-full px-6 py-4 border border-gray-300 focus:border-amber-600 focus:outline-none transition text-lg font-light"
+                    placeholder="Nailea Studios"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm uppercase tracking-widest text-gray-600 mb-3">Timezone</label>
+                  <select
+                    value={settings.timezone}
+                    onChange={e => setSettings(prev => ({ ...prev, timezone: e.target.value }))}
+                    className="w-full px-6 py-4 border border-gray-300 focus:border-amber-600 focus:outline-none transition text-lg font-light"
+                  >
+                    <option value="America/New_York">New York (EST)</option>
+                    <option value="America/Chicago">Chicago (CST)</option>
+                    <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                    <option value="America/Toronto">Toronto (EST)</option>
+                    <option value="Europe/London">London (GMT)</option>
+                    <option value="Europe/Paris">Paris (CET)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Working Hours */}
-          <div className="bg-white border border-gray-200 shadow-lg p-10">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-gradient-to-br from-gold-50 to-stone-50 rounded-full">
-                <Clock className="w-8 h-8 text-gold-600" />
-              </div>
-              <h3 className="text-2xl font-light text-gray-900">Working Hours</h3>
-            </div>
-            <div className="space-y-4">
-              {Object.entries(settings.workingHours).map(([day, hours]) => (
-                <div key={day} className="flex items-center gap-6">
-                  <div className="w-32 text-right capitalize font-medium text-gray-700">
-                    {day === 'sunday' ? 'Sunday' : day.slice(0, 3)}
-                  </div>
-                  {hours.closed ? (
-                    <div className="flex-1 text-center text-gray-500 font-light">Closed</div>
-                  ) : (
-                    <div className="flex items-center gap-4 flex-1">
-                      <input
-                        type="time"
-                        value={hours.open}
-                        onChange={e => updateWorkingDay(day, 'open', e.target.value)}
-                        className="px-4 py-3 border border-gray-300 focus:border-gold-600 transition"
-                      />
-                      <span className="text-gray-500">—</span>
-                      <input
-                        type="time"
-                        value={hours.close}
-                        onChange={e => updateWorkingDay(day, 'close', e.target.value)}
-                        className="px-4 py-3 border border-gray-300 focus:border-gold-600 transition"
-                      />
-                    </div>
-                  )}
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hours.closed}
-                      onChange={e => updateWorkingDay(day, 'closed', e.target.checked)}
-                      className="w-5 h-5 text-gold-600 rounded focus:ring-gold-500"
-                    />
-                    <span className="text-sm text-gray-600">Closed</span>
-                  </label>
+          <div className="bg-white border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-amber-600 via-amber-500 to-transparent" />
+            <div className="p-12">
+              <div className="flex items-center gap-5 mb-10">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl">
+                  <Clock className="w-9 h-9 text-white" />
                 </div>
-              ))}
+                <h2 className="text-3xl font-light text-gray-900">Working Hours</h2>
+              </div>
+
+              <div className="space-y-6">
+                {days.map(day => {
+                  const hours = settings.workingHours[day];
+                  const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+                  const isSunday = day === 'sunday';
+
+                  return (
+                    <div key={day} className="flex items-center gap-6 py-4 border-b border-gray-100 last:border-0">
+                      <div className="w-28 text-right font-medium text-gray-700 capitalize">
+                        {isSunday ? 'Sunday' : dayName.slice(0, 3)}
+                      </div>
+
+                      {hours.closed ? (
+                        <div className="flex-1 text-center text-gray-500 font-light italic">Closed</div>
+                      ) : (
+                        <div className="flex items-center gap-5 flex-1">
+                          <input
+                            type="time"
+                            value={hours.open}
+                            onChange={e => updateWorkingDay(day, 'open', e.target.value)}
+                            className="px-5 py-3 border border-gray-300 focus:border-amber-600 transition w-40"
+                          />
+                          <span className="text-gray-400 text-xl">—</span>
+                          <input
+                            type="time"
+                            value={hours.close}
+                            onChange={e => updateWorkingDay(day, 'close', e.target.value)}
+                            className="px-5 py-3 border border-gray-300 focus:border-amber-600 transition w-40"
+                          />
+                        </div>
+                      )}
+
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hours.closed}
+                          onChange={e => updateWorkingDay(day, 'closed', e.target.checked)}
+                          className="w-6 h-6 text-amber-600 rounded focus:ring-amber-500"
+                        />
+                        <span className="text-sm font-medium text-gray-600">Closed</span>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Notifications & Preferences */}
-        <div className="space-y-8">
+        {/* Right Sidebar */}
+        <div className="space-y-10">
+
           {/* Notifications */}
-          <div className="bg-white border border-gray-200 shadow-lg p-10">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-4 bg-gradient-to-br from-gold-50 to-stone-50 rounded-full">
-                <Bell className="w-8 h-8 text-gold-600" />
+          <div className="bg-white border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-amber-600 via-amber-500 to-transparent" />
+            <div className="p-10">
+              <div className="flex items-center gap-5 mb-8">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl">
+                  <Bell className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-light text-gray-900">Notifications</h3>
               </div>
-              <h3 className="text-2xl font-light text-gray-900">Notifications</h3>
-            </div>
-            <div className="space-y-6">
-              {[
-                { label: 'Reminder Email', key: 'reminderEmail' },
-                { label: 'Reminder SMS', key: 'reminderSMS' },
-                { label: 'Booking Confirmation Email', key: 'bookingConfirmationEmail' },
-                { label: 'Booking Confirmation SMS', key: 'bookingConfirmationSMS' },
-                { label: 'Require Phone Number', key: 'requirePhone' },
-              ].map(item => (
-                <label key={item.key} className="flex items-center justify-between cursor-pointer">
-                  <span className="text-gray-700 font-light">{item.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={settings[item.key]}
-                    onChange={e => setSettings(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                    className="w-6 h-6 text-gold-600 rounded focus:ring-gold-500"
-                  />
-                </label>
-              ))}
+
+              <div className="space-y-7">
+                {[
+                  { label: 'Reminder Email', key: 'reminderEmail' },
+                  { label: 'Reminder SMS', key: 'reminderSMS' },
+                  { label: 'Booking Confirmation Email', key: 'bookingConfirmationEmail' },
+                  { label: 'Booking Confirmation SMS', key: 'bookingConfirmationSMS' },
+                  { label: 'Require Phone Number', key: 'requirePhone' },
+                ].map(item => (
+                  <label key={item.key} className="flex items-center justify-between cursor-pointer group">
+                    <span className="text-gray-700 font-light group-hover:text-gray-900 transition">{item.label}</span>
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={settings[item.key]}
+                        onChange={e => setSettings(prev => ({ ...prev, [item.key]: e.target.checked }))}
+                        className="sr-only"
+                      />
+                      <div className={`w-14 h-8 rounded-full transition ${settings[item.key] ? 'bg-amber-600' : 'bg-gray-300'}`}>
+                        <div className={`w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${settings[item.key] ? 'translate-x-7' : 'translate-x-1'} mt-1`} />
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -215,26 +249,32 @@ export default function AdminSettings() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-6 bg-black text-white font-medium tracking-wider uppercase hover:bg-gray-900 transition disabled:opacity-60 flex items-center justify-center gap-4 text-xl shadow-2xl"
+            className="w-full py-7 bg-black text-white font-medium tracking-widest uppercase hover:bg-gray-900 transition-all disabled:opacity-60 flex items-center justify-center gap-4 text-xl shadow-2xl group"
           >
-            <Save className="w-6 h-6" />
-            {saving ? 'Saving...' : 'Save All Settings'}
+            <Save className="w-7 h-7 group-hover:scale-110 transition" />
+            {saving ? 'Saving Changes...' : 'Save All Settings'}
           </button>
 
-          {/* Message */}
+          {/* Success/Error Message */}
           {message && (
-            <div className={`p-6 text-center border ${message.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'} shadow-lg`}>
-              <div className="flex items-center justify-center gap-3">
-                {message.type === 'success' ? <CheckCircle className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
-                <p className="font-medium">{message.text}</p>
+            <div className={`p-8 text-center shadow-2xl border ${message.type === 'success' 
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center justify-center gap-4">
+                {message.type === 'success' ? (
+                  <CheckCircle className="w-10 h-10" />
+                ) : (
+                  <AlertCircle className="w-10 h-10" />
+                )}
+                <p className="text-xl font-medium">{message.text}</p>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom accent */}
-      <div className="mt-20 h-px bg-gradient-to-r from-transparent via-gold-600 to-transparent opacity-30" />
+      <div className="mt-20 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent opacity-40" />
     </div>
   );
 }
