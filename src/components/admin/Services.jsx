@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/apiClient';
-import { Clock, DollarSign, Sparkles, Edit3, Plus, X, Tag, Power } from 'lucide-react';
+import { Clock, DollarSign, Sparkles, Edit3, Plus, X, Tag, Ruler } from 'lucide-react';
 
+// Categories helps filtering (you can customize these)
 const CATEGORIES = ["Manicure", "Pedicure", "Nail Art", "Extensions", "Removal", "Add-on"];
 
 export default function AdminServices() {
@@ -17,12 +18,12 @@ export default function AdminServices() {
     price: '',
     duration: '',
     description: '',
-    isActive: true
+    isActive: true,
+    hasLength: false // <--- NEW: Toggle for Length Options
   });
 
-  const [editingId, setEditingId] = useState(null); // Track if editing
+  const [editingId, setEditingId] = useState(null);
 
-  // Load services
   useEffect(() => {
     fetchServices();
   }, []);
@@ -30,7 +31,6 @@ export default function AdminServices() {
   const fetchServices = () => {
     api.get('/services')
       .then(res => {
-        // Handle various API return shapes
         const data = Array.isArray(res.data) ? res.data : res.data?.services || [];
         setServices(data);
       })
@@ -49,7 +49,8 @@ export default function AdminServices() {
         price: service.price,
         duration: service.duration,
         description: service.description || '',
-        isActive: service.isActive !== undefined ? service.isActive : true
+        isActive: service.isActive !== undefined ? service.isActive : true,
+        hasLength: service.hasLength || false // <--- Load existing setting
       });
     } else {
       setEditingId(null);
@@ -59,13 +60,13 @@ export default function AdminServices() {
         price: '',
         duration: '',
         description: '',
-        isActive: true
+        isActive: true,
+        hasLength: false // <--- Default to false
       });
     }
     setIsModalOpen(true);
   };
 
-  // Handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ 
@@ -74,7 +75,6 @@ export default function AdminServices() {
     }));
   };
 
-  // Submit new/updated service
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.duration) return;
@@ -84,18 +84,17 @@ export default function AdminServices() {
       const payload = {
         name: formData.name.trim(),
         category: formData.category,
-        price: parseFloat(formData.price), // Important for Schema Number type
-        duration: parseInt(formData.duration), // Important for Schema Number type
+        price: parseFloat(formData.price),
+        duration: parseInt(formData.duration),
         description: formData.description.trim(),
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        hasLength: formData.hasLength // <--- Send to Backend
       };
 
       if (editingId) {
-        // Update existing
         const res = await api.put(`/services/${editingId}`, payload);
         setServices(prev => prev.map(s => s._id === editingId ? res.data : s));
       } else {
-        // Create new
         const res = await api.post('/services', payload);
         setServices(prev => [...prev, res.data]);
       }
@@ -127,7 +126,7 @@ export default function AdminServices() {
           </h1>
           <div className="w-32 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent mt-6" />
           <p className="text-lg text-gray-600 mt-4 font-light">
-            {services.length} treatments available for booking
+            Manage your treatments and pricing
           </p>
         </div>
 
@@ -146,10 +145,7 @@ export default function AdminServices() {
           <div className="col-span-full bg-white border border-gray-200 shadow-lg p-24 text-center rounded-lg">
             <Sparkles className="w-24 h-24 mx-auto mb-6 text-gray-200" />
             <p className="text-xl text-gray-500 font-light">No services found.</p>
-            <button
-              onClick={() => handleOpenModal()}
-              className="mt-8 text-amber-600 hover:text-amber-700 font-medium"
-            >
+            <button onClick={() => handleOpenModal()} className="mt-8 text-amber-600 hover:text-amber-700 font-medium">
               + Create your first service
             </button>
           </div>
@@ -160,21 +156,26 @@ export default function AdminServices() {
               onClick={() => handleOpenModal(service)}
               className={`group relative bg-white border shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden rounded-lg cursor-pointer ${!service.isActive ? 'opacity-60 grayscale' : 'border-gray-200'}`}
             >
-              {/* Active/Inactive Status Strip */}
+              {/* Active Strip */}
               <div className={`absolute top-0 left-0 right-0 h-1 ${service.isActive ? 'bg-gradient-to-r from-amber-600 via-amber-400 to-amber-200' : 'bg-gray-300'}`} />
 
               <div className="p-8">
-                {/* Category Badge */}
+                {/* Badges Row */}
                 <div className="flex justify-between items-start mb-6">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-medium tracking-wide uppercase border border-amber-100">
-                    <Tag className="w-3 h-3" />
-                    {service.category || 'General'}
-                  </span>
-                  {!service.isActive && (
-                    <span className="text-xs font-bold text-red-500 border border-red-200 px-2 py-1 rounded bg-red-50">
-                      INACTIVE
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-medium tracking-wide uppercase border border-amber-100">
+                      <Tag className="w-3 h-3" />
+                      {service.category}
                     </span>
-                  )}
+                    
+                    {/* VISUAL INDICATOR FOR LENGTH */}
+                    {service.hasLength && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-medium tracking-wide uppercase border border-blue-100">
+                        <Ruler className="w-3 h-3" />
+                        Length Options
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <h3 className="text-2xl font-light text-center text-gray-900 tracking-wide mb-6 group-hover:text-amber-700 transition-colors">
@@ -204,7 +205,7 @@ export default function AdminServices() {
                     {service.description}
                   </p>
                 )}
-
+                
                 <div className="mt-8 flex items-center justify-center gap-2 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
                   <Edit3 className="w-4 h-4" />
                   <span className="text-sm font-medium">Edit Details</span>
@@ -221,40 +222,46 @@ export default function AdminServices() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity" onClick={() => setIsModalOpen(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-              className="bg-white w-full max-w-lg shadow-2xl border border-gray-100 overflow-hidden transform transition-all scale-100"
+              className="bg-white w-full max-w-lg shadow-2xl border border-gray-100 overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
-              {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50">
                 <h2 className="text-xl font-light tracking-wide text-gray-900">
                   {editingId ? 'Edit Service' : 'Add New Service'}
                 </h2>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-900 transition p-2 hover:bg-gray-200 rounded-full"
-                >
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-900 transition p-2 rounded-full hover:bg-gray-200">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[80vh] overflow-y-auto">
                 
-                {/* Active Toggle (Only for editing) */}
-                <div className="flex justify-end">
-                   <label className="inline-flex items-center cursor-pointer gap-3">
-                    <span className="text-sm text-gray-500">{formData.isActive ? 'Active Service' : 'Hidden / Archived'}</span>
-                    <input 
-                      type="checkbox" 
-                      name="isActive"
-                      checked={formData.isActive} 
-                      onChange={handleChange}
-                      className="sr-only peer"
-                    />
-                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                  </label>
+                {/* --- TOGGLE SWITCHES ROW --- */}
+                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    
+                    {/* Is Active Toggle */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <div className="relative">
+                        <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-amber-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Available</span>
+                    </label>
+
+                    {/* Has Length Toggle */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <div className="relative">
+                        <input type="checkbox" name="hasLength" checked={formData.hasLength} onChange={handleChange} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">Length Options?</span>
+                        <span className="text-[10px] text-gray-400">Ask Short/Med/Long</span>
+                      </div>
+                    </label>
                 </div>
 
+                {/* Name */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Service Name</label>
                   <input
@@ -268,6 +275,7 @@ export default function AdminServices() {
                   />
                 </div>
 
+                {/* Category */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Category</label>
                   <select
@@ -282,6 +290,7 @@ export default function AdminServices() {
                   </select>
                 </div>
 
+                {/* Price & Duration */}
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price ($)</label>
@@ -313,6 +322,7 @@ export default function AdminServices() {
                   </div>
                 </div>
 
+                {/* Description */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description</label>
                   <textarea
@@ -325,6 +335,7 @@ export default function AdminServices() {
                   />
                 </div>
 
+                {/* Footer Buttons */}
                 <div className="flex gap-4 pt-4">
                   <button
                     type="submit"
