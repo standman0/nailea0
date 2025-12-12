@@ -1,19 +1,26 @@
-// src/components/admin/Services.jsx
 import React, { useEffect, useState } from 'react';
 import api from '../../api/apiClient';
-import { Clock, DollarSign, Sparkles, Edit3, Plus, X } from 'lucide-react';
+import { Clock, DollarSign, Sparkles, Edit3, Plus, X, Tag, Power } from 'lucide-react';
+
+const CATEGORIES = ["Manicure", "Pedicure", "Nail Art", "Extensions", "Removal", "Add-on"];
 
 export default function AdminServices() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form State
   const [formData, setFormData] = useState({
     name: '',
+    category: 'Manicure',
     price: '',
     duration: '',
-    description: ''
+    description: '',
+    isActive: true
   });
-  const [saving, setSaving] = useState(false);
+
+  const [editingId, setEditingId] = useState(null); // Track if editing
 
   // Load services
   useEffect(() => {
@@ -23,42 +30,80 @@ export default function AdminServices() {
   const fetchServices = () => {
     api.get('/services')
       .then(res => {
+        // Handle various API return shapes
         const data = Array.isArray(res.data) ? res.data : res.data?.services || [];
         setServices(data);
       })
       .catch(err => {
         console.error("Failed to load services:", err);
-        setServices([]);
       })
       .finally(() => setLoading(false));
   };
 
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleOpenModal = (service = null) => {
+    if (service) {
+      setEditingId(service._id);
+      setFormData({
+        name: service.name,
+        category: service.category || 'Manicure',
+        price: service.price,
+        duration: service.duration,
+        description: service.description || '',
+        isActive: service.isActive !== undefined ? service.isActive : true
+      });
+    } else {
+      setEditingId(null);
+      setFormData({
+        name: '',
+        category: 'Manicure',
+        price: '',
+        duration: '',
+        description: '',
+        isActive: true
+      });
+    }
+    setIsModalOpen(true);
   };
 
-  // Submit new service
+  // Handle input change
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
+  };
+
+  // Submit new/updated service
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.duration) return;
 
     setSaving(true);
     try {
-      const response = await api.post('/services', {
+      const payload = {
         name: formData.name.trim(),
-        price: parseFloat(formData.price),
-        duration: parseInt(formData.duration),
-        description: formData.description.trim()
-      });
+        category: formData.category,
+        price: parseFloat(formData.price), // Important for Schema Number type
+        duration: parseInt(formData.duration), // Important for Schema Number type
+        description: formData.description.trim(),
+        isActive: formData.isActive
+      };
 
-      setServices(prev => [...prev, response.data]);
+      if (editingId) {
+        // Update existing
+        const res = await api.put(`/services/${editingId}`, payload);
+        setServices(prev => prev.map(s => s._id === editingId ? res.data : s));
+      } else {
+        // Create new
+        const res = await api.post('/services', payload);
+        setServices(prev => [...prev, res.data]);
+      }
+
       setIsModalOpen(false);
-      setFormData({ name: '', price: '', duration: '', description: '' });
     } catch (err) {
-      console.error("Failed to create service:", err);
-      alert("Failed to add service. Please try again.");
+      console.error("Failed to save service:", err);
+      alert("Failed to save service. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -73,23 +118,22 @@ export default function AdminServices() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
-          <h1 className="text-5xl font-light tracking-wider text-gray-900">
-            Services
+          <h1 className="text-4xl md:text-5xl font-light tracking-wider text-gray-900">
+            Service Menu
           </h1>
           <div className="w-32 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent mt-6" />
           <p className="text-lg text-gray-600 mt-4 font-light">
-            {services.length} exclusive treatments in your collection
+            {services.length} treatments available for booking
           </p>
         </div>
 
-        {/* Add Button */}
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-black text-white rounded-none hover:bg-gray-900 transition-all group"
+          onClick={() => handleOpenModal()}
+          className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-black text-white rounded-none hover:bg-gray-900 transition-all group shadow-lg"
         >
           <Plus className="w-5 h-5 group-hover:scale-110 transition" />
           <span className="font-medium tracking-wide">Add New Service</span>
@@ -97,105 +141,150 @@ export default function AdminServices() {
       </div>
 
       {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {services.length === 0 ? (
           <div className="col-span-full bg-white border border-gray-200 shadow-lg p-24 text-center rounded-lg">
             <Sparkles className="w-24 h-24 mx-auto mb-6 text-gray-200" />
-            <p className="text-xl text-gray-500 font-light">No services have been added yet</p>
+            <p className="text-xl text-gray-500 font-light">No services found.</p>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => handleOpenModal()}
               className="mt-8 text-amber-600 hover:text-amber-700 font-medium"
             >
-              + Add your first service
+              + Create your first service
             </button>
           </div>
         ) : (
           services.map((service) => (
             <div
               key={service._id}
-              className="group relative bg-white border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden rounded-lg"
+              onClick={() => handleOpenModal(service)}
+              className={`group relative bg-white border shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden rounded-lg cursor-pointer ${!service.isActive ? 'opacity-60 grayscale' : 'border-gray-200'}`}
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-600 via-amber-500 to-transparent" />
+              {/* Active/Inactive Status Strip */}
+              <div className={`absolute top-0 left-0 right-0 h-1 ${service.isActive ? 'bg-gradient-to-r from-amber-600 via-amber-400 to-amber-200' : 'bg-gray-300'}`} />
 
-              <div className="h-56 bg-gradient-to-br from-amber-50 via-stone-50 to-white flex items-center justify-center">
-                <Sparkles className="w-20 h-20 text-amber-600/30 group-hover:text-amber-600/50 transition" />
-              </div>
-
-              <div className="p-10">
-                <h3 className="text-2xl font-light text-center text-gray-900 tracking-wide mb-8">
-                  {service.name}
-                </h3>
-
-                <div className="space-y-6 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <Clock className="w-6 h-6 text-amber-600" />
-                    <span className="text-lg font-light text-gray-700">{service.duration} minutes</span>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-3">
-                    <DollarSign className="w-7 h-7 text-amber-600" />
-                    <span className="text-3xl font-light text-gray-900">${service.price}</span>
-                  </div>
-
-                  {service.description && (
-                    <p className="mt-8 text-gray-600 font-light leading-relaxed text-sm">
-                      {service.description}
-                    </p>
+              <div className="p-8">
+                {/* Category Badge */}
+                <div className="flex justify-between items-start mb-6">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-medium tracking-wide uppercase border border-amber-100">
+                    <Tag className="w-3 h-3" />
+                    {service.category || 'General'}
+                  </span>
+                  {!service.isActive && (
+                    <span className="text-xs font-bold text-red-500 border border-red-200 px-2 py-1 rounded bg-red-50">
+                      INACTIVE
+                    </span>
                   )}
                 </div>
 
-                <div className="mt-10 text-center opacity-0 group-hover:opacity-100 transition">
-                  <button className="inline-flex items-center gap-2 text-gray-600 hover:text-black transition">
-                    <Edit3 className="w-5 h-5" />
-                    <span className="text-sm font-medium tracking-wide">Edit Service</span>
-                  </button>
+                <h3 className="text-2xl font-light text-center text-gray-900 tracking-wide mb-6 group-hover:text-amber-700 transition-colors">
+                  {service.name}
+                </h3>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-b border-gray-100 py-6 mb-6">
+                  <div className="flex flex-col items-center justify-center border-r border-gray-100">
+                    <div className="flex items-center gap-2 text-gray-400 mb-1">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider">Duration</span>
+                    </div>
+                    <span className="text-lg font-medium text-gray-900">{service.duration} m</span>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex items-center gap-2 text-gray-400 mb-1">
+                      <DollarSign className="w-4 h-4" />
+                      <span className="text-xs uppercase tracking-wider">Price</span>
+                    </div>
+                    <span className="text-lg font-medium text-gray-900">${service.price}</span>
+                  </div>
+                </div>
+
+                {service.description && (
+                  <p className="text-gray-500 font-light text-sm leading-relaxed text-center line-clamp-2">
+                    {service.description}
+                  </p>
+                )}
+
+                <div className="mt-8 flex items-center justify-center gap-2 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                  <Edit3 className="w-4 h-4" />
+                  <span className="text-sm font-medium">Edit Details</span>
                 </div>
               </div>
-
-              <div className="h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent opacity-30" />
             </div>
           ))
         )}
       </div>
 
-      {/* Add Service Modal */}
+      {/* Modal */}
       {isModalOpen && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setIsModalOpen(false)} />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity" onClick={() => setIsModalOpen(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-              className="bg-white w-full max-w-lg shadow-2xl border border-gray-200 overflow-hidden"
+              className="bg-white w-full max-w-lg shadow-2xl border border-gray-100 overflow-hidden transform transition-all scale-100"
               onClick={e => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-8 border-b border-gray-100">
-                <h2 className="text-2xl font-light tracking-wide text-gray-900">Add New Service</h2>
+              <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50">
+                <h2 className="text-xl font-light tracking-wide text-gray-900">
+                  {editingId ? 'Edit Service' : 'Add New Service'}
+                </h2>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-900 transition"
+                  className="text-gray-400 hover:text-gray-900 transition p-2 hover:bg-gray-200 rounded-full"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                
+                {/* Active Toggle (Only for editing) */}
+                <div className="flex justify-end">
+                   <label className="inline-flex items-center cursor-pointer gap-3">
+                    <span className="text-sm text-gray-500">{formData.isActive ? 'Active Service' : 'Hidden / Archived'}</span>
+                    <input 
+                      type="checkbox" 
+                      name="isActive"
+                      checked={formData.isActive} 
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Service Name</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Service Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-amber-600 focus:ring-0 transition"
-                    placeholder="e.g. Signature Blowout"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:ring-0 transition outline-none"
+                    placeholder="e.g. Gel Manicure"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Category</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:ring-0 transition outline-none appearance-none"
+                  >
+                    {CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price ($)</label>
                     <input
                       type="number"
                       name="price"
@@ -203,36 +292,36 @@ export default function AdminServices() {
                       onChange={handleChange}
                       required
                       min="0"
-                      step="5"
-                      className="w-full px-4 py-3 border border-gray-300 focus:border-amber-600 focus:ring-0 transition"
-                      placeholder="150"
+                      step="0.01"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:ring-0 transition outline-none"
+                      placeholder="0.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Duration (Min)</label>
                     <input
                       type="number"
                       name="duration"
                       value={formData.duration}
                       onChange={handleChange}
                       required
-                      min="15"
-                      step="15"
-                      className="w-full px-4 py-3 border border-gray-300 focus:border-amber-600 focus:ring-0 transition"
+                      min="5"
+                      step="5"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:ring-0 transition outline-none"
                       placeholder="60"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description</label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-amber-600 focus:ring-0 transition resize-none"
-                    placeholder="A luxurious experience featuring..."
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:ring-0 transition outline-none resize-none"
+                    placeholder="Describe the service..."
                   />
                 </div>
 
@@ -242,12 +331,12 @@ export default function AdminServices() {
                     disabled={saving}
                     className="flex-1 bg-black text-white py-4 font-medium tracking-wide hover:bg-gray-900 transition disabled:opacity-70"
                   >
-                    {saving ? 'Adding Service...' : 'Add Service'}
+                    {saving ? 'Saving...' : (editingId ? 'Update Service' : 'Add Service')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-8 py-4 border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+                    className="px-8 py-4 border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
                   >
                     Cancel
                   </button>
